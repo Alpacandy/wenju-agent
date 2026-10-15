@@ -1,0 +1,489 @@
+/* ==========================================================================
+   问矩 · 现代数学工件与实验探究工作台组件样式 (workbench-tools.css)
+   ========================================================================== */
+
+/* ── 1. 猜想与预测引导卡片 (HypothesisScaffoldCard) ── */
+.hypothesis-scaffold-card {
+  position: relative;
+  margin: 8px 12px 6px 12px;
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 12px;
+  color: #f1f5f9;
+  box-shadow: 0 8px 24px -4px rgba(2, 6, 23, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 20;
+}
+
+.hypothesis-scaffold-card.is-predict-active {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 16px -2px rgba(56, 189, 248, 0.25), 0 8px 24px -4px rgba(2, 6, 23, 0.4);
+}
+
+.hypothesis-scaffold-card.is-collapsed .scaffold-card-body {
+  display: none;
+}
+
+.hypothesis-scaffold-card .scaffold-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hypothesis-scaffold-card .scaffold-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hypothesis-scaffold-card .scaffold-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.hypothesis-scaffold-card.is-predict-active .scaffold-badge {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fbbf24;
+  border-color: rgba(234, 179, 8, 0.35);
+  animation: pulsePredict 2s infinite ease-in-out;
+}
+
+@keyframes pulsePredict {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.hypothesis-scaffold-card .scaffold-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.hypothesis-scaffold-card .scaffold-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hypothesis-scaffold-card .btn-scaffold-toggle {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.hypothesis-scaffold-card .btn-scaffold-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.hypothesis-scaffold-card .scaffold-card-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hypothesis-scaffold-card .scaffold-guide-text {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.hypothesis-scaffold-card .scaffold-guide-text strong {
+  color: #38bdf8;
+}
+
+/* 预设猜想胶囊阵列 */
+.scaffold-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 6px;
+}
+
+.scaffold-conjecture-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 11.5px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.scaffold-conjecture-chip:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.scaffold-conjecture-chip.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.scaffold-conjecture-chip .chip-label {
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.scaffold-conjecture-chip .chip-rationale {
+  font-size: 10.5px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+/* 猜想输入与验证条 */
+.scaffold-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.scaffold-rationale-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 12px;
+  padding: 6px 10px;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+  transition: border-color 0.15s ease;
+}
+
+.scaffold-rationale-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.scaffold-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scaffold-threshold-badge {
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.scaffold-threshold-badge.invalid {
+  color: #f87171;
+}
+
+.scaffold-threshold-badge.valid {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.btn-scaffold-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-scaffold-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-scaffold-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #334155;
+  color: #94a3b8;
+}
+
+/* ── 2. 画板分镜指示器 (Canvas Storyboard Stepper) ── */
+.canvas-storyboard-stepper {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  z-index: 10;
+  pointer-events: auto;
+}
+
+.canvas-storyboard-stepper.hidden {
+  display: none !important;
+}
+
+.storyboard-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.storyboard-step-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.storyboard-step-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.storyboard-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.storyboard-step-btn.active .storyboard-step-num {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+/* ── 3. Excalidraw 风格画板手绘批注与草稿图层 (CanvasAnnotationLayer) ── */
+.canvas-annotation-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.canvas-annotation-layer.hidden {
+  display: none !important;
+  pointer-events: none;
+}
+
+.btn-toggle-annotation-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  color: #38bdf8 !important;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle-annotation-layer:hover {
+  background: rgba(30, 41, 59, 0.95);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.btn-toggle-annotation-layer.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.annotation-floating-toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  z-index: 25;
+  pointer-events: auto;
+  user-select: none;
+  animation: annotToolbarSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes annotToolbarSlideUp {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.annotation-floating-toolbar.hidden {
+  display: none !important;
+}
+
+.annotation-tool-group,
+.annotation-color-group,
+.annotation-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.annotation-color-group {
+  padding: 0 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-annot-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-annot-tool:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.btn-annot-tool.active {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.btn-annot-color {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.btn-annot-color:hover {
+  transform: scale(1.15);
+}
+
+.btn-annot-color.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  transform: scale(1.2);
+}
+
+.btn-annot-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(30, 41, 59, 0.75);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-annot-action:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.btn-annot-action.primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-annot-action.primary:hover {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+}
+
+.btn-annot-action.close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.artifact-workspace .annotation-floating-toolbar{max-width:calc(100% - 16px);width:max-content;flex-wrap:wrap;justify-content:center;gap:5px;padding:5px 7px;border-radius:7px;bottom:10px}.artifact-workspace .annotation-tool-group,.artifact-workspace .annotation-color-group,.artifact-workspace .annotation-action-group{flex-wrap:wrap;justify-content:center;gap:3px}.artifact-workspace .annotation-floating-toolbar button{min-height:28px;padding:3px 6px}.artifact-workspace .annotation-color-group{padding:0 5px}.artifact-workspace .annotation-tool-group span{display:none}.artifact-workspace .annotation-floating-toolbar .btn-annot-color{padding:0;min-height:18px}
+
+.artifact-workspace .annotation-floating-toolbar{animation:none}
+
+.hypothesis-scaffold-card[hidden]{display:none!important}.hypothesis-scaffold-card{margin:4px 10px;padding:7px 10px;border:1px solid #dce5df;border-radius:6px;box-shadow:none;background:#f7faf7;color:#345047;backdrop-filter:none}.hypothesis-scaffold-card.is-predict-active{box-shadow:none;border-color:#c7d9ce}.hypothesis-scaffold-card .scaffold-title{color:#345047;font-size:12px}.hypothesis-scaffold-card .scaffold-title-group{min-width:0}.hypothesis-scaffold-card .scaffold-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hypothesis-scaffold-card .scaffold-badge{color:#456e5b;background:#e7f1e9;border:0;animation:none;flex:none;padding:1px 5px;font-size:10px}.hypothesis-scaffold-card .scaffold-card-body{max-height:210px;overflow:auto;gap:7px}.hypothesis-scaffold-card .scaffold-chips-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.hypothesis-scaffold-card .scaffold-conjecture-chip{background:#fff;border-color:#dce5df;padding:5px 7px}.hypothesis-scaffold-card .chip-label,.hypothesis-scaffold-card .scaffold-guide-text strong{color:#365e4d}.hypothesis-scaffold-card .chip-rationale,.hypothesis-scaffold-card .scaffold-guide-text{color:#6a7f70}.hypothesis-scaffold-card .scaffold-input-group{background:transparent;padding:0;border:0}.hypothesis-scaffold-card .scaffold-rationale-input{background:#fff;color:#345047;border-color:#cbdcd0}.hypothesis-scaffold-card .scaffold-threshold-badge{color:#6c7e71}.hypothesis-scaffold-card .btn-scaffold-submit{background:#35675a;box-shadow:none;padding:4px 8px;min-height:28px}.hypothesis-scaffold-card .scaffold-footer-row{gap:6px}.hypothesis-scaffold-card .btn-scaffold-toggle{color:#59715f}

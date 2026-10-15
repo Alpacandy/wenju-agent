@@ -1,0 +1,22 @@
+# 问矩宿主配置模板（P7-H5）
+# 复制为 server/config.yaml（该文件名在 .gitignore 内，绝不入库）后填写真实密钥。
+server:
+  port: 0                 # 0 = 随机端口（启动时打印真实端口与令牌）
+  workspace_root: ./data/workspace
+  storage_file: ./data/wenju.sqlite     # 会话 SQLite（P7-H1）
+  event_file: ./data/events.jsonl       # 审计事件（JSONL，WS 通道广播源）
+  allowed_origins:
+    - http://127.0.0.1:8000
+    - http://localhost:8000
+providers:
+  minimax:
+    base_url: https://api.minimax.io/v1
+    api_key: ""           # 真实密钥仅写在这里（本文件副本在 .gitignore 内，绝不进 git）
+  deepseek_official:
+    base_url: https://api.deepseek.com
+    api_key: ""
+  openai_official:
+    base_url: https://api.openai.com/v1
+    api_key: ""
+policy:
+  mode: full              # readonly | full

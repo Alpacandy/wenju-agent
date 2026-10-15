@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 1,
+  "chapters": ["矩阵运算", "线性方程组与秩", "线性相关性", "特征值与对角化"],
+  "entries": [
+    {
+      "id": "MC-001", "chapter": "矩阵运算", "statement": "矩阵乘法满足交换律 AB=BA",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[1,2],[0,1]]，B=[[2,0],[1,1]]。你预测 AB 与 BA 相等吗？",
+        "options": [
+          {"key": "misconception", "text": "相等，乘法满足交换律"},
+          {"key": "calculation", "text": "我算过 AB 和 BA，某一处算错了所以不相等"},
+          {"key": "misreading", "text": "题目问的是 BA 与 AB 的行列式"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "什么样的矩阵满足 AB=BA？试试对角矩阵。注意：例子只证明存在性，充要条件需推导 (A+B)²=A²+AB+BA+B²。",
+      "bkt": {"L0": 0.35, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-002", "chapter": "矩阵运算", "statement": "(A+B)² 可直接套用平方公式 = A²+2AB+B²",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "展开 (A+B)(A+B)，第二第三项分别是什么？",
+        "options": [
+          {"key": "misconception", "text": "合并为 2AB，因为乘法可交换"},
+          {"key": "calculation", "text": "两项都是 AB，我合并时加错了"},
+          {"key": "misreading", "text": "题目是数量平方不是矩阵平方"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "推导 (A+B)²=A²+AB+BA+B²，得出平方公式成立当且仅当 AB=BA（同阶方阵）。",
+      "bkt": {"L0": 0.3, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-003", "chapter": "矩阵运算", "statement": "存在「矩阵除法」，可以写 B/A 或 A\\B",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "已知 AB=AC 且 A≠O，能否像数字一样「两边除以 A」得 B=C？",
+        "options": [
+          {"key": "misconception", "text": "可以，除以 A 消去"},
+          {"key": "calculation", "text": "A 不可逆时我忘了检验，这是计算失误"},
+          {"key": "misreading", "text": "题目问的是转置不是消去"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "消去律成立当且仅当 A 可逆。A 奇异时构造反例：A=[[1,0],[0,0]]，B≠C 但 AB=AC。",
+      "bkt": {"L0": 0.3, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-004", "chapter": "矩阵运算", "statement": "行列式保持加法：det(A+B)=det(A)+det(B)",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=I，B=I，det(A+B) 与 det(A)+det(B) 各是多少？",
+        "options": [
+          {"key": "misconception", "text": "都等于 2"},
+          {"key": "calculation", "text": "det(2I) 我算成了 2 而不是 4"},
+          {"key": "misreading", "text": "题目是 det(A·B)"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "det 是 n 次齐次而非线性函数：det(2I)=2²=4。可加性仅对「某一行线性」成立，不对整个矩阵成立。",
+      "bkt": {"L0": 0.3, "T": 0.1, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-005", "chapter": "矩阵运算", "statement": "|kA| = k|A|（漏掉 k 的 n 次幂因子）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A 是 2×2 矩阵，det(3A) 等于什么？",
+        "options": [
+          {"key": "misconception", "text": "3·det(A)"},
+          {"key": "calculation", "text": "9·det(A)，但我手滑写成了 3"},
+          {"key": "misreading", "text": "题目是 A 的三次幂的行列式"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "每行都提出因子 k，n 行共 k^n：|kA|=k^n|A|。用对角阵验证。",
+      "bkt": {"L0": 0.3, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-006", "chapter": "矩阵运算", "statement": "转置与逆混淆：Aᵀ = A⁻¹ 或 (Aᵀ)⁻¹ = A",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[2,0],[0,3]]，Aᵀ 与 A⁻¹ 分别是什么？",
+        "options": [
+          {"key": "misconception", "text": "两者相同"},
+          {"key": "calculation", "text": "A⁻¹ 该除以 6 我忘了"},
+          {"key": "misreading", "text": "题目问的是伴随矩阵"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "Aᵀ=A⁻¹ 当且仅当 A 是正交矩阵。对角阵 [[2,0],[0,3]] 转置不变但逆是 [[1/2,0],[0,1/3]]。",
+      "bkt": {"L0": 0.25, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-007", "chapter": "矩阵运算", "statement": "AB=O 蕴含 A=O 或 B=O（零因子消去）",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "能否构造 A≠O 且 B≠O 但 AB=O？",
+        "options": [
+          {"key": "misconception", "text": "不能，必有零因子"},
+          {"key": "calculation", "text": "我举的例子乘出来有非零残余，算错了"},
+          {"key": "misreading", "text": "题目是 BA 不是 AB"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "充要条件 Col(B)⊆Null(A)：取 A 秩 1，B 的列取自 A 的零空间基。实验台可一键构造并精确验证。",
+      "bkt": {"L0": 0.3, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-008", "chapter": "矩阵运算", "statement": "(AB)⁻¹ = A⁻¹B⁻¹（顺序可交换）",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "(AB)(B⁻¹A⁻¹) 与 (AB)(A⁻¹B⁻¹) 分别等于什么？",
+        "options": [
+          {"key": "misconception", "text": "都等于 I"},
+          {"key": "calculation", "text": "后者乘出来不是 I，我消去顺序搞错了"},
+          {"key": "misreading", "text": "题目问转置的逆"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "穿脱袜顺序：(AB)⁻¹=B⁻¹A⁻¹。用 A=[[2,1],[1,1]], B=[[1,1],[0,2]] 实验验证两种顺序结果不同。",
+      "bkt": {"L0": 0.28, "T": 0.1, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-009", "chapter": "矩阵运算", "statement": "(AB)² = A²B²",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "展开 (AB)(AB)，中间能否重排为 AABB？",
+        "options": [
+          {"key": "misconception", "text": "可以，乘法交换"},
+          {"key": "calculation", "text": "展开项位置我抄错了"},
+          {"key": "misreading", "text": "题目是 (A+B)²"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "(AB)²=A(BA)B，一般 ≠A²B²；等式成立的一般条件是 A(BA−AB)B=O。进阶：存在不交换但等式成立的奇异反例（实验台旗舰场景）。",
+      "bkt": {"L0": 0.28, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-010", "chapter": "矩阵运算", "statement": "A²−B²=(A−B)(A+B)",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "(A−B)(A+B) 展开后中间两项是什么？",
+        "options": [
+          {"key": "misconception", "text": "互相抵消"},
+          {"key": "calculation", "text": "AB−BA 我当成了 0 来合并"},
+          {"key": "misreading", "text": "题目是数量代数"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "(A−B)(A+B)=A²+AB−BA−B²，差恰为 AB−BA——平方差公式成立当且仅当 AB=BA。",
+      "bkt": {"L0": 0.28, "T": 0.12, "G": 0.2, "S": 0.1}
+    },
+    {
+      "id": "MC-011", "chapter": "矩阵运算", "statement": "非方阵也可以相乘/有行列式（忽略维度契约）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A 是 2×3，B 是 3×2，AB 与 BA 的形状分别是什么？各有没有行列式？",
+        "options": [
+          {"key": "misconception", "text": "都是 2×2，都有行列式"},
+          {"key": "calculation", "text": "BA 我算成了 2×2"},
+          {"key": "misreading", "text": "题目问的是秩"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "AB 是 2×2，BA 是 3×3：乘积形状由内维度消去决定，行列式只对方阵定义。",
+      "bkt": {"L0": 0.2, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-012", "chapter": "线性方程组与秩", "statement": "方程个数多于未知数则无解",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "3 个方程 2 个未知数的方程组一定无解吗？",
+        "options": [
+          {"key": "misconception", "text": "一定无解"},
+          {"key": "calculation", "text": "增广矩阵化阶梯时某行算错"},
+          {"key": "misreading", "text": "题目是 2 个方程 3 个未知数"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "解的存在性由秩判定：r(A)=r(A|b) 即有解（多余方程相容时）。构造三方程两未知且唯一解的例子。",
+      "bkt": {"L0": 0.25, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-013", "chapter": "线性方程组与秩", "statement": "秩等于非零行的「看起来」数量（不做消元直接数）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[1,2],[2,4]] 有两个非零行，rank 是多少？",
+        "options": [
+          {"key": "misconception", "text": "2，因为有两行非零"},
+          {"key": "calculation", "text": "第二行消元时除法算错"},
+          {"key": "misreading", "text": "题目问零空间维数"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "rank 是消元后主元数：第二行是第一行 2 倍 → rank=1。实验台用精确 RREF 验证。",
+      "bkt": {"L0": 0.25, "T": 0.12, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-014", "chapter": "线性方程组与秩", "statement": "零空间只有零向量（忽略奇异情形）",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "Ax=0 且 A≠O，解一定只有 x=0 吗？",
+        "options": [
+          {"key": "misconception", "text": "是，齐次只有零解"},
+          {"key": "calculation", "text": "自由变量我漏了一个"},
+          {"key": "misreading", "text": "题目是非齐次 Ax=b"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "齐次方程组有非零解 等价于 det(A)=0 等价于 rank<n（方阵）。拖拽画布到 rank=1 观察零空间射线。",
+      "bkt": {"L0": 0.28, "T": 0.12, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-015", "chapter": "线性方程组与秩", "statement": "认为乘积可以升秩：rank(AB) 可能大于 min(rank A, rank B)",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "rank(A)=2, rank(B)=1（2×2），rank(AB) 的上界是什么？",
+        "options": [
+          {"key": "misconception", "text": "可以超过 1"},
+          {"key": "calculation", "text": "我把 AB 乘出来某元素算错导致秩高估"},
+          {"key": "misreading", "text": "题目问 A+B 的秩"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "西尔维斯特：rank(AB) ≤ min(rank A, rank B)，乘法只会降秩不会升秩。",
+      "bkt": {"L0": 0.22, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-016", "chapter": "线性方程组与秩", "statement": "克拉姆法则适用于任意方程组（含奇异/非方阵）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "det(A)=0 时能用克拉姆法则求解吗？",
+        "options": [
+          {"key": "misconception", "text": "可以，代公式即可"},
+          {"key": "calculation", "text": "分母为 0 我没注意"},
+          {"key": "misreading", "text": "题目问高斯消元"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "克拉姆法则前提：方阵且 det≠0。奇异时按 r(A) 与 r(A|b) 分类讨论。",
+      "bkt": {"L0": 0.22, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-017", "chapter": "线性相关性", "statement": "含零向量的向量组可能线性无关",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "{0, v₁, v₂}（v 非零）线性相关还是无关？",
+        "options": [
+          {"key": "misconception", "text": "无关，只要 v 们无关"},
+          {"key": "calculation", "text": "组合系数解出来有非零解我没发现"},
+          {"key": "misreading", "text": "题目问的是张成"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "含零向量的向量组必相关：1·0+0·v₁+0·v₂=0 有非平凡表示。",
+      "bkt": {"L0": 0.25, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-018", "chapter": "线性相关性", "statement": "误以为三个向量两两不成比例则整体线性无关",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "v₁=(1,0), v₂=(0,1), v₃=(1,1)：两两都不成比例，整体线性无关吗？",
+        "options": [
+          {"key": "misconception", "text": "无关"},
+          {"key": "calculation", "text": "解方程时 v₃=v₁+v₂ 没解出来"},
+          {"key": "misreading", "text": "题目问正交性"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "整体相关性 = 存在一组不全为零系数：v₃−v₁−v₂=0。秩判定：3 个二维向量 rank≤2 必相关。",
+      "bkt": {"L0": 0.28, "T": 0.12, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-019", "chapter": "线性相关性", "statement": "无关组的部分组可能相关（方向记反）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "整体线性无关的向量组，其任意真子集的相关性？",
+        "options": [
+          {"key": "misconception", "text": "可能相关"},
+          {"key": "calculation", "text": "我子集化简时系数算错"},
+          {"key": "misreading", "text": "题目问延伸组（加向量）"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "无关组的部分组必无关（相关组的扩大组必相关）——单向蕴含，别记反。",
+      "bkt": {"L0": 0.22, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-020", "chapter": "线性相关性", "statement": "n+1 个 n 维向量可以线性无关",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "R² 中取 3 个向量，可能线性无关吗？",
+        "options": [
+          {"key": "misconception", "text": "可能，只要取得巧"},
+          {"key": "calculation", "text": "行列式展开算错为非零"},
+          {"key": "misreading", "text": "题目是 R³ 中 3 个"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "向量个数大于维数则必相关（秩上界）。这是「个数判相关」定理。",
+      "bkt": {"L0": 0.25, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-021", "chapter": "特征值与对角化", "statement": "所有矩阵都有实特征值",
+      "source": "legacy-card", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[0,1],[−1,0]]（旋转 90°），特征值是什么？",
+        "options": [
+          {"key": "misconception", "text": "两个实数"},
+          {"key": "calculation", "text": "判别式符号我算错了"},
+          {"key": "misreading", "text": "题目问奇异值"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "特征多项式 λ²+1 判别式 −4<0：共轭复根 ±i，无实特征向量。旋转矩阵是标准反例。",
+      "bkt": {"L0": 0.28, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-022", "chapter": "特征值与对角化", "statement": "特征向量彼此正交（一般矩阵）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[1,2],[0,3]] 的两个特征向量互相正交吗？",
+        "options": [
+          {"key": "misconception", "text": "正交"},
+          {"key": "calculation", "text": "解 (A−λI)x=0 时行变换错了"},
+          {"key": "misreading", "text": "题目限定对称矩阵"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "只有（实）对称矩阵保证特征向量可取成标准正交；一般矩阵特征向量仅线性无关（且不同特征值的特征向量线性无关）。",
+      "bkt": {"L0": 0.22, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-023", "chapter": "特征值与对角化", "statement": "认为必须特征值互异才可对角化（重根一律不可对角化）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "单位阵 I 的特征值全为 1（重根），它可对角化吗？",
+        "options": [
+          {"key": "misconception", "text": "重根不可对角化"},
+          {"key": "calculation", "text": "几何重数我算错了"},
+          {"key": "misreading", "text": "题目问正交对角化"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "可对角化 等价于 每个特征值的几何重数=代数重数。互异是充分不必要；I 本身就是对角阵。",
+      "bkt": {"L0": 0.22, "T": 0.12, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-024", "chapter": "特征值与对角化", "statement": "特征值之和等于行列式（与迹混淆）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "Σλᵢ 与 Πλᵢ 分别等于矩阵的哪个量？",
+        "options": [
+          {"key": "misconception", "text": "和=det，积=trace"},
+          {"key": "calculation", "text": "特征多项式常数项符号搞错"},
+          {"key": "misreading", "text": "题目问特征向量之和"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "Σλ=tr(A)，Πλ=det(A)。用对角阵 [[2,0],[0,3]] 验证：2+3=tr，2·3=det。",
+      "bkt": {"L0": 0.25, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-025", "chapter": "特征值与对角化", "statement": "A 与 Aᵀ 有不同特征值",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[1,2],[3,4]] 与其转置的特征多项式相同吗？",
+        "options": [
+          {"key": "misconception", "text": "不同"},
+          {"key": "calculation", "text": "转置行列式展开算错"},
+          {"key": "misreading", "text": "题目问 A 与 A⁻¹"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "det(λI−Aᵀ)=det((λI−A)ᵀ)=det(λI−A)：特征多项式必相同（特征向量可不同）。",
+      "bkt": {"L0": 0.18, "T": 0.1, "G": 0.12, "S": 0.1}
+    },
+    {
+      "id": "MC-026", "chapter": "特征值与对角化", "statement": "可对角化与对称等价（充分必要混淆）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[1,2],[0,3]] 不对称，它可对角化吗？",
+        "options": [
+          {"key": "misconception", "text": "不对称故不可对角化"},
+          {"key": "calculation", "text": "我求特征向量解方程出错"},
+          {"key": "misreading", "text": "题目问正交对角化"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "实对称则必可（正交）对角化，是充分不必要：互异特征值的非对称阵同样可对角化。",
+      "bkt": {"L0": 0.22, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-027", "chapter": "矩阵运算", "statement": "数量乘法逐元素乘（kA 理解错位/与哈达玛积混淆）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "2·[[1,2],[3,4]] 等于什么？",
+        "options": [
+          {"key": "misconception", "text": "只乘第一行/或与 [[2,2],[2,2]] 逐元素乘混淆"},
+          {"key": "calculation", "text": "某个元素漏乘"},
+          {"key": "misreading", "text": "题目是 A²"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "数量乘法作用于每个元素：2A=[[2,4],[6,8]]。与矩阵乘法、哈达玛积区分。",
+      "bkt": {"L0": 0.15, "T": 0.1, "G": 0.1, "S": 0.1}
+    },
+    {
+      "id": "MC-028", "chapter": "矩阵运算", "statement": "(AB)ᵀ=AᵀBᵀ（转置运算律记错，漏反序）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "(AB)ᵀ 等于 AᵀBᵀ 还是 BᵀAᵀ？",
+        "options": [
+          {"key": "misconception", "text": "AᵀBᵀ"},
+          {"key": "calculation", "text": "验证时乘积元素算错"},
+          {"key": "misreading", "text": "题目问逆的转置"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "反序律：(AB)ᵀ=BᵀAᵀ（与逆的穿脱律同型）。用非对称 A,B 实验验证。",
+      "bkt": {"L0": 0.2, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-029", "chapter": "线性方程组与秩", "statement": "初等行变换改变解集/秩",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "对增广矩阵做行变换后，方程组的解变了吗？",
+        "options": [
+          {"key": "misconception", "text": "变了"},
+          {"key": "calculation", "text": "某一步变换本身算错"},
+          {"key": "misreading", "text": "题目问列变换"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "行变换保持解集与秩不变（列变换一般会变解）。这是高斯消元的合法性根基。",
+      "bkt": {"L0": 0.18, "T": 0.1, "G": 0.12, "S": 0.1}
+    },
+    {
+      "id": "MC-030", "chapter": "线性相关性", "statement": "把「相关」理解为每个向量都可由其余表示",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "线性相关时，是「每个向量」都可由其余表示，还是「存在某向量」可由其余表示？",
+        "options": [
+          {"key": "misconception", "text": "每个向量都可以"},
+          {"key": "calculation", "text": "解表示系数时算错"},
+          {"key": "misreading", "text": "题目问极大无关组"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "相关 等价于 存在（至少一个）向量可由其余线性表示；零向量参与时该向量无法由其余表示——「存在」不是「任意」。",
+      "bkt": {"L0": 0.2, "T": 0.1, "G": 0.15, "S": 0.1}
+    },
+    {
+      "id": "MC-031", "chapter": "特征值与对角化", "statement": "特征向量乘以零仍是特征向量（忽略非零性）",
+      "source": "eedi-taxonomy", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "x 是特征向量，0·x=0 也是特征向量吗？",
+        "options": [
+          {"key": "misconception", "text": "是"},
+          {"key": "calculation", "text": "验证 A·0=λ·0 时式子没错但结论判断错"},
+          {"key": "misreading", "text": "题目问特征值是否可为零"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "特征向量要求非零（定义约束）；特征值可以为 0（A 奇异 等价于 0 是特征值）。",
+      "bkt": {"L0": 0.15, "T": 0.1, "G": 0.12, "S": 0.1}
+    },
+    {
+      "id": "MC-032", "chapter": "特征值与对角化", "statement": "k 重特征值恰有 k 个线性无关特征向量（代数重数恒等于几何重数）",
+      "source": "local-annotation", "eediMisconceptionId": null,
+      "discriminating": {
+        "stem": "A=[[2,1],[0,2]] 特征值 2 二重，它有几个线性无关的特征向量？可对角化吗？",
+        "options": [
+          {"key": "misconception", "text": "2 个，可对角化"},
+          {"key": "calculation", "text": "解 (A−2I)x=0 时秩算错"},
+          {"key": "misreading", "text": "题目问 2 是否为特征值"}
+        ],
+        "correctKey": "misconception"
+      },
+      "boundaryPrompt": "A−2I=[[0,1],[0,0]] 秩 1 则几何重数 1 < 代数重数 2 则不可对角化（约当块）。这是可对角化判定的标准反例。",
+      "bkt": {"L0": 0.22, "T": 0.12, "G": 0.15, "S": 0.1}
+    }
+  ]
+}

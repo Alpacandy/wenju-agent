@@ -1,0 +1,31 @@
+version: '3.8'
+
+# ==============================================================================
+# 《问矩》物理隔离部署编排配置 (Docker Compose) - 方案 B 专属
+# 核心特征：
+# 1. 严格资源熔断保护：硬性锁死内存 ≤ 50MB，CPU ≤ 0.2核，绝不争抢宿主机现有业务
+# 2. 独立安全端口：映射至 8888 端口，不占用 80 / 443，不影响宿主机其他项目
+# 3. 静态只读挂载：容器内无写权限，杜绝恶意篡改
+# ==============================================================================
+
+services:
+  wenju-teachagent:
+    image: nginx:alpine
+    container_name: wenju-teachagent
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./nginx-teachagent.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../dist:/data/www/teachagent/dist:ro
+    # 资源硬限制配置 (Linux cgroups 物理防护，杜绝 OOM 影响宿主机)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 50M
+        reservations:
+          cpus: '0.05'
+          memory: 15M
+    security_opt:
+      - no-new-privileges:true

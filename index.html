@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问矩 · 线性代数实验式探究智能助教</title>
+  <!-- P7-H7 主文档 CSP（来源白名单；媒体/字体/脚本均显式登记）
+       指令依据：
+         · script-src 'wasm-unsafe-eval' —— Pyodide/SymPy 内核（js/math/exactKernelWorker.js → cdn.jsdelivr.net/pyodide）
+           需在 Worker 内实例化 wasm；CDP 探针（test_studio_headless_cdp.js）在全量套件中证明仅此一项即足够（无须 'unsafe-eval'）；
+         · script-src 'unsafe-inline' —— 受控 iframe 工件/Live Runner 的内联脚本必须执行。CDP 探针（2026-10-12）
+           实证 srcdoc 与 blob: 均属本地 scheme、同继承父页 CSP，无 'unsafe-inline' 时工件脚本被拦；
+         · style-src 'unsafe-inline' —— 组件以 style 属性驱动画布与悬浮层。
+       已清偿：运行时 schema 校验改用解释型校验器（js/mcp/JsonSchemaLite.js，零代码生成；Ajv 降级为 Node 侧差分
+       oracle，tests/unit/test_schema_validator_differential.js 以真实工具 schema 语料对拍 159 例全一致）——
+       故 CSP 不再需要 'unsafe-eval'（原需求来自 Ajv 的 new Function 代码生成）。
+       残留登记（显式，不静默）：'unsafe-inline' 削弱对"注入内联脚本"的防御，补偿控制为——第三方脚本 SRI 锁定、
+       Markdown/URL 允许列表净化、工件侧 sandbox（无 allow-same-origin）+ 工件级 CSP 注入 + postMessage source 校验、
+       object-src 'none' 与 base-uri 'self' 收口注入面；connect-src 限 https + 本机回环，收敛数据外发面。 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; worker-src 'self' blob:; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="libs/jsxgraph/jsxgraph.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/artifact-workspace.css">
+  <link rel="stylesheet" href="css/workbench-tools.css">
+</head>
+<body>
+
+  <!-- ============================================================
+       1. 大师级双拼门面主页 (Two-Tone Split Fullscreen Stage)
+       左半区：深板岩蓝黑 (#0f172a) 承载高对比大字号排版与操作入口
+       右半区：明亮通透浅色软垫背景 (#f8fafc) 承载整幅 3D 旋转超立方体
+       ============================================================ -->
+  <section id="landing-page" class="page-view">
+    <div class="landing-split-container">
+      
+      <!-- 1. 左半区：高阶深海蓝夜色承载极简大字排版与操作入口 -->
+      <div class="split-side-dark" id="hero-dark-pane">
+        <!-- 顶级设计类背景动效：微极光与鼠标交互微探照灯 -->
+        <div class="ambient-aurora-bg"></div>
+        <div class="ambient-grid-overlay"></div>
+        <div class="spotlight-overlay" id="hero-spotlight"></div>
+
+        <!-- 顶部品牌 -->
+        <header class="dark-nav-brand">
+          <div class="brand-badge-dark">
+            <span class="brand-logo-dark">W</span>
+            <span class="brand-title-dark">问矩</span>
+          </div>
+        </header>
+
+        <!-- 中间：海报级大字排版叙事 -->
+        <div class="dark-hero-body">
+          <h1 class="dark-hero-title">
+            <span class="gradient-headline shiny-text">让矩阵在空间中舒展</span><br>
+            <span class="gradient-subheadline shiny-text-slow">探寻代数几何本质</span>
+          </h1>
+
+          <p class="dark-hero-desc">
+            基于二维向量基底与仿射变换核，提供空间映射、奇异降维与零空间流形的可交互几何表征与代数推演验证。
+          </p>
+
+          <div class="dark-actions">
+            <button id="btn-enter-studio" class="btn-hero-white">
+              <span class="btn-text">进入实验探究工作台</span>
+              <svg class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 底部自然留白 -->
+      </div>
+
+      <!-- 2. 右半区：纯净浅白软垫背景承载毕加索立体主义 3D 几何晶体雕塑 -->
+      <div class="split-side-light">
+        <div class="light-canvas-wrapper">
+          <canvas id="landing-canvas"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- 全站共享现代学术级全局导航栏 (作为所有工作台子页面公共顶栏，常驻显示绝不丢失) -->
+  <header class="global-navbar hidden" id="global-navbar">
+    <div class="header-left-group">
+      <!-- 全局返回上一页按钮 (带历史路由栈支持) -->
+      <button id="btn-global-back" class="btn-circle-action" title="返回上一页 (Back)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+
+      <div class="header-brand-wrap" id="nav-brand-home" title="返回门户主页">
+        <div class="logo-mark">W</div>
+        <span class="brand-text">问矩</span>
+      </div>
+
+      <!-- 动态路由面包屑 -->
+      <nav class="nav-breadcrumbs" id="nav-breadcrumbs">
+        <span class="bc-sep">/</span>
+        <span class="bc-current" id="bc-current-page">实验探究工作台</span>
+      </nav>
+    </div>
+
+    <!-- 中央全局模块导航选项卡 -->
+    <nav class="header-global-nav">
+      <button class="nav-tab active" data-nav="studio">
+        <span class="nav-tab-icon">✦</span>
+        <span>实验探究工作台</span>
+      </button>
+      <button class="nav-tab" data-nav="library">
+        <span class="nav-tab-icon">❖</span>
+        <span>误解与反例库</span>
+      </button>
+      <button class="nav-tab" data-nav="graph">
+        <span class="nav-tab-icon">☍</span>
+        <span>概念认知图谱</span>
+      </button>
+    </nav>
+
+    <!-- 右侧操作与设置 -->
+    <div class="header-right-actions">
+      <!-- 工作台专属几何状态回滚与视角重置 (非工作台时自适应隐藏) -->
+      <div class="studio-quick-actions" id="studio-quick-actions">
+        <button id="btn-undo-state" class="btn-circle-action" title="撤销上一步几何变换 (Ctrl+Z)" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+        </button>
+        <button id="btn-redo-state" class="btn-circle-action" title="重做下一步几何变换 (Ctrl+Y)" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button id="btn-reset-workspace" class="btn-circle-action" title="重置视角与原点">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="agent-nav-pill" id="btn-open-api-config-nav" title="配置 API Key 与推理模型">
+        <span class="agent-status-dot"></span>
+        <span id="agent-nav-model-label">通义千问 Qwen2.5-7B (助教)</span>
+        <span class="pill-gear-icon">⚙</span>
+      </div>
+      <button id="btn-back-home" class="btn-circle-action" title="返回门面首页">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       2. 探究工作台主界面 (Studio Workspace - 现代学术实验坞)
+       ============================================================ -->
+  <section id="studio-page" class="page-view hidden">
+    <!-- 工作台主体：双大圆角浮岛卡片 -->
+    <main class="studio-stage">
+      <!-- 左侧：通用几何实验主舱 (深邃暗夜画布 + 毕加索多面晶体 + 矩阵气泡 HUD) -->
+      <section class="floating-lab-card">
+        <div class="canvas-viewport" style="position: relative;">
+          <canvas id="viewport-canvas" tabindex="0" aria-label="坐标画板，可拖动基向量；聚焦后 Ctrl+Z 撤销画板操作"></canvas>
+          <!-- P4 T4.4：JSXGraph 后端视图（默认隐藏，切换后显示并行几何检查视图） -->
+          <div id="jsxgraph-viewport" style="display:none;position:absolute;inset:0;z-index:5;background:#0b1220;border-radius:10px;"></div>
+
+          <!-- 右上角悬浮毛玻璃矩阵气泡 HUD (默认彻底隐藏，保证画布零文字纯净) -->
+          <div id="viewport-matrix-bubble" class="matrix-bubble-hud">
+            <div class="bubble-math-inner">
+              <span class="math-matrix-name">A = </span>
+              <span class="matrix-bracket">(</span>
+              <table class="matrix-table" id="hud-matrix-table">
+                <tr><td>1</td><td>0</td></tr>
+                <tr><td>0</td><td>1</td></tr>
+              </table>
+              <span class="matrix-bracket">)</span>
+              <span class="matrix-det-sep">,</span>
+              <span class="matrix-det-text">|det(A)| = <strong id="hud-det-val">1.00</strong></span>
+            </div>
+          </div>
+
+          <!-- 底部时空穿梭控制器 (Time Travel Scrubber) 宿主 -->
+          <div id="time-travel-scrubber-mount" class="time-travel-mount"></div>
+        </div>
+      </section>
+
+      <!-- 右侧：纯净学术推演与 Agent 探究工作台 (严格对标 ZCode 架构) -->
+      <aside class="floating-console-card">
+        <!-- 1. 顶部紧凑工具条 (不参与滚动) -->
+        <header class="console-header-bar">
+          <div class="console-title-pill">
+            <span class="console-title-dot"></span>
+            <span class="console-title-text" id="console-active-session-title">代数探究助教</span>
+            <span id="pechdt-stage-badge" class="pechdt-badge-chip" title="当前探究环节">✦ PERCEIVE · 概念感知</span>
+          </div>
+          
+          <div class="agent-status-actions">
+            <!-- 历史任务抽屉触发器 (对标 ZCode TaskList / Sidebar) -->
+            <button id="btn-session-history" class="btn-toolbox-toggle" title="展开历史探究任务与会话列表 (/history)">
+              <span class="history-book-icon">📚</span>
+              <span>历史任务</span>
+              <span id="session-count-badge" class="session-count-badge">1</span>
+            </button>
+
+            <!-- 快速新建任务按钮 -->
+            <button id="btn-new-session" class="btn-circle-action" title="新建探究任务 (+)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+
+            <!-- 消息与轨迹搜索触发器 (对标 ZCode ModelTrajectorySearchBar) -->
+            <button id="btn-toggle-msg-search" class="btn-circle-action" title="在当前会话中检索消息与思考链 (Ctrl+F)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
+
+            <!-- 空间维度切换 (2D 仿射变换 / 3D 旋转超几何空间) -->
+            <button id="btn-toggle-space-dimension" class="btn-dimension-toggle" title="切换 2D 仿射变换 / 3D 空间视图">
+              <span class="dim-icon">❖</span>
+              <span id="dim-label">2D / 3D 空间</span>
+            </button>
+
+            <!-- 资源包与算子抽屉触发器 -->
+            <button id="btn-toggle-toolbox" class="btn-toolbox-toggle" title="展开矩阵参数与算子工具箱">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              <span>算子工具箱</span>
+            </button>
+
+            <button id="btn-clear-chat" class="btn-clear-stream" title="清空对话与思考链路 (/clear)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- 内联消息与思维链检索栏 (对标 ZCode ModelTrajectorySearchBar) -->
+        <div id="console-msg-search-bar" class="console-msg-search-bar hidden">
+          <div class="msg-search-inner">
+            <svg class="msg-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="msg-search-input" placeholder="在当前消息与思考链中搜索关键字..." />
+            <span id="msg-search-count" class="msg-search-count">0/0</span>
+            <button type="button" id="btn-msg-search-prev" class="btn-msg-search-nav" title="上一个匹配项">▲</button>
+            <button type="button" id="btn-msg-search-next" class="btn-msg-search-nav" title="下一个匹配项">▼</button>
+            <button type="button" id="btn-msg-search-close" class="btn-msg-search-close" title="关闭搜索 (Esc)">✕</button>
+          </div>
+        </div>
+
+        <!-- 2. Agent 多模态对话与思考执行链路流 + 轮次导航微缩轨 (对标 ZCode Turn Minimap) -->
+        <div class="stream-with-rail-container">
+          <div id="prompt-turn-rail" class="prompt-turn-rail-host"></div>
+          <div id="agent-session-stream" class="agent-session-stream pure-chat-stream">
+            <!-- 动态渲染思考流折叠栏、工具调用步骤与回答内容 -->
+          </div>
+        </div>
+
+        <!-- 滑出式任务历史抽屉 (对标 ZCode TaskList / SortableWorkspaceSidebar) -->
+        <div id="session-history-backdrop" class="session-history-backdrop hidden"></div>
+        <aside id="session-history-drawer" class="session-history-drawer hidden">
+          <div class="session-drawer-header">
+            <div class="drawer-header-title">
+              <span class="drawer-main-title">📚 探究任务历史</span>
+              <span class="drawer-subtitle">多课题会话管理与快照切换</span>
+            </div>
+            <div class="drawer-header-actions">
+              <button type="button" id="btn-export-sessions" class="btn-drawer-action" title="导出所有会话记录为 JSON">导出记录</button>
+              <button type="button" id="btn-import-sessions" class="btn-drawer-action" title="从 JSON 文件导入历史会话">导入记录</button>
+              <input type="file" id="input-import-sessions" accept=".json,application/json" class="hidden" style="display: none;" />
+              <button type="button" id="btn-drawer-new-task" class="btn-drawer-action primary" title="新建任务">➕ 新建</button>
+              <button type="button" id="btn-close-session-drawer" class="btn-drawer-action close" title="关闭 (Esc)">✕</button>
+            </div>
+          </div>
+          <div class="session-drawer-search">
+            <input type="text" id="session-search-input" placeholder="搜索历史探究任务或关键词..." />
+          </div>
+          <div class="session-drawer-list" id="session-history-list">
+            <!-- 动态生成会话项 -->
+          </div>
+        </aside>
+
+        <!-- 3. 右侧卡片底端专属输入坞 (永远钉在底部，不可滚动，永不飞天) -->
+        <footer class="console-input-footer" id="dock-mount-point"></footer>
+      </aside>
+    </main>
+
+    <!-- 右侧角隅滑出抽屉：矩阵算子与实验工具箱 (按需调出，默认收起) -->
+    <div id="studio-toolbox-backdrop" class="toolbox-drawer-backdrop"></div>
+    <aside id="studio-toolbox-drawer" class="studio-toolbox-drawer" aria-label="矩阵与算子工具箱">
+      <div class="drawer-header">
+        <div class="drawer-header-left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span class="drawer-title">矩阵算子与实验工具箱</span>
+        </div>
+        <button id="btn-close-toolbox" class="btn-drawer-close" title="收起工具箱 (Esc)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- 矩阵参数编辑器与指标监控 -->
+        <div class="matrix-workbench-card">
+          <div class="matrix-workbench-header">
+            <span class="workbench-tag">变换矩阵 · Affine Matrix A</span>
+            <span id="rank-badge" class="symbol-rank-badge">满秩保维 rank(A)=2</span>
+          </div>
+
+          <div class="matrix-editor-row">
+            <!-- 矩阵 2x2 输入网格 -->
+            <div class="matrix-editor-bracket-wrap">
+              <span class="matrix-bracket-large">(</span>
+              <div class="matrix-editor-grid">
+                <div class="matrix-cell">
+                  <label>a (e₁x)</label>
+                  <input type="number" id="studio-mat-a" step="0.1" value="1.0" />
+                </div>
+                <div class="matrix-cell">
+                  <label>b (e₂x)</label>
+                  <input type="number" id="studio-mat-b" step="0.1" value="0.0" />
+                </div>
+                <div class="matrix-cell">
+                  <label>c (e₁y)</label>
+                  <input type="number" id="studio-mat-c" step="0.1" value="0.0" />
+                </div>
+                <div class="matrix-cell">
+                  <label>d (e₂y)</label>
+                  <input type="number" id="studio-mat-d" step="0.1" value="1.0" />
+                </div>
+              </div>
+              <span class="matrix-bracket-large">)</span>
+            </div>
+
+            <!-- 空间代数指标显示 -->
+            <div class="matrix-editor-metrics">
+              <div class="metric-pill">
+                <span class="metric-label">行列式 det(A)</span>
+                <span class="metric-val" id="studio-det-display">1.00</span>
+              </div>
+              <div class="metric-pill">
+                <span class="metric-label">空间秩 rank(A)</span>
+                <span class="metric-val" id="studio-rank-display">2</span>
+              </div>
+              <div class="metric-pill">
+                <span class="metric-label">零化度 nullity(A)</span>
+                <span class="metric-val" id="studio-nullity-display">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 几何预设算子快速切换组 -->
+          <div class="matrix-presets-bar">
+            <span class="presets-label">空间算子:</span>
+            <button class="preset-chip active" data-preset="identity">单位映射 I</button>
+            <button class="preset-chip" data-preset="shear">剪切变换 Shear</button>
+            <button class="preset-chip" data-preset="rotation90">正交旋转 90°</button>
+            <button class="preset-chip" data-preset="singular">奇异降维 秩1</button>
+            <button class="preset-chip" data-preset="projectionX">正交投影 Proj</button>
+            <button class="preset-chip" data-preset="reflection">镜像反射 Refl</button>
+          </div>
+
+          <!-- 动态子空间流形状态条 -->
+          <div id="studio-oracle-matrix-b" class="studio-oracle-matrix-b subspace-live-banner" style="display:none"></div>
+          <div id="nullspace-dynamic-expr" class="subspace-live-banner">
+            核空间: Null(A) = { (0, 0) } (保维同构映射，仅原点映射至原点)
+          </div>
+        </div>
+
+        <!-- 典型探究资源包快速调入 -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">典型代数实验包</div>
+          <div class="drawer-quick-actions">
+            <button class="drawer-action-btn" data-preset="singular">
+              <span class="action-icon">✦</span>
+              <span class="action-text">构造奇异降维态 (Ker A ≠ {0})</span>
+            </button>
+            <button class="drawer-action-btn" data-preset="shear">
+              <span class="action-icon">✦</span>
+              <span class="action-text">观察基底剪切与等积变形</span>
+            </button>
+            <button class="drawer-action-btn" data-preset="reflection">
+              <span class="action-icon">✦</span>
+              <span class="action-text">验证镜面反射与行列式负号</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 控制台输入坞已内嵌于 aside.floating-console-card 底部，根治跨屏遮挡 -->
+  </section>
+  
+  <!-- ============================================================
+       3. 概念误解与反例实验库 (Misconception & Counterexample Lab)
+       ============================================================ -->
+  <section id="library-page" class="page-view hidden academic-subpage">
+    <div class="subpage-container">
+      <div class="subpage-header-row">
+        <div>
+          <h2 class="subpage-title">概念误解与反例推演实验室</h2>
+          <p class="subpage-subtitle">针对线性代数中关于零因子、非对易性与行列式测度等典型认知难点，提供形式化代数反例构造与几何映射证伪。</p>
+        </div>
+        <div class="subpage-badge">内置严格代数构造引擎</div>
+      </div>
+
+      <!-- 实时反例推演工作台 (Live Counterexample Workbench) -->
+      <div class="counterexample-interactive-workbench academic-workbench-card">
+        <div class="workbench-header">
+          <div class="workbench-tag-row">
+            <span class="workbench-tag">✦ 严谨代数证伪实验室</span>
+            <span class="workbench-engine-tag">矩阵计算工具</span>
+          </div>
+          <h4>输入任意二阶矩阵 $\mathbf{A}$，由代数底座严格生成反例、李括号与充要条件推导</h4>
+        </div>
+        <div class="workbench-grid">
+          <div class="workbench-input-side">
+            <label class="matrix-input-label">待测矩阵 $\mathbf{A} = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$ 参数：</label>
+            <div class="matrix-2x2-input-frame">
+              <span class="matrix-input-bracket">(</span>
+              <div class="matrix-2x2-inputs">
+                <input type="number" id="mat-input-a" value="2.0" step="0.5" />
+                <input type="number" id="mat-input-b" value="1.0" step="0.5" />
+                <input type="number" id="mat-input-c" value="4.0" step="0.5" />
+                <input type="number" id="mat-input-d" value="2.0" step="0.5" />
+              </div>
+              <span class="matrix-input-bracket">)</span>
+            </div>
+            <!-- 快速载入预设矩阵 -->
+            <div class="workbench-presets-bar">
+              <span class="workbench-presets-label">快速预设:</span>
+              <button class="btn-workbench-chip" data-mat="[2,1,4,2]" title="载入奇异降维阵">奇异降维</button>
+              <button class="btn-workbench-chip" data-mat="[1,2,0,1]" title="载入非对称剪切阵">非对称剪切</button>
+              <button class="btn-workbench-chip" data-mat="[3,0,0,3]" title="载入代数中心标量阵">代数中心阵</button>
+              <button class="btn-workbench-chip" data-mat="[1,2,3,4]" title="载入满秩可逆阵">可逆全秩阵</button>
+            </div>
+            <div class="workbench-actions-row">
+              <button id="btn-calc-zero-product" class="btn-workbench-primary">生成非零反例 $\mathbf{B}$ ($\mathbf{A}\mathbf{B}=\mathbf{O}$)</button>
+              <button id="btn-calc-commutator" class="btn-workbench-secondary">检验非对易律 $[\mathbf{A},\mathbf{B}] \neq \mathbf{O}$</button>
+              <button id="btn-calc-det-nonlinear" class="btn-workbench-secondary">证伪行列式加法分配律</button>
+              <button id="btn-calc-inverse-order" class="btn-workbench-secondary">检验逆矩阵穿脱袜顺序</button>
+              <button id="btn-calc-rank-inequality" class="btn-workbench-secondary">验证西尔维斯特秩不等式</button>
+            </div>
+          </div>
+          <div class="workbench-result-side" id="workbench-result-side">
+            <div class="result-placeholder">
+              <div class="res-title">代数证伪与定理证明输出台</div>
+              <div class="res-body" id="workbench-result-body">
+                请在左侧设定任意矩阵参数并点击推演动作。系统将通过严格代数求解器输出真实反例矩阵、分步乘法核验与几何充要条件。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分类过滤标签 -->
+      <div class="library-filter-tabs" id="library-filter-tabs">
+        <button class="filter-tab active" data-filter="all">全部陷阱 (6)</button>
+        <button class="filter-tab" data-filter="kernel">空间核与降维</button>
+        <button class="filter-tab" data-filter="commute">变换复合非对易</button>
+        <button class="filter-tab" data-filter="det">行列式仿射测度</button>
+        <button class="filter-tab" data-filter="inverse">矩阵代数分配律</button>
+      </div>
+
+      <!-- 6 大经典认知陷阱卡片 -->
+      <div class="cards-grid-misconceptions" id="misconception-cards-grid">
+        <!-- 卡片 1: 零因子误解 -->
+        <div class="misconception-card featured" data-category="kernel" data-matrix="singular">
+          <div class="misc-card-tag">空间核与降维</div>
+          <h3 class="misc-card-name">实数零乘法则泛化误解</h3>
+          <p class="misc-formula-preview">误认为：$A \cdot B = O \implies A = O \lor B = O$</p>
+          <div class="misc-explain">
+            实数中 $ab = 0$ 必有一零。但在矩阵乘法中，只要矩阵 $B$ 的所有列向量完全落在矩阵 $A$ 的零空间（核）中，两非零矩阵乘积严格归零！
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">充要条件：$\operatorname{Col}(B) \subseteq \operatorname{Null}(A)$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[2,1,4,2]" data-action="AB_ZERO">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="singular">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 矩阵乘法非对易性 -->
+        <div class="misconception-card" data-category="commute" data-matrix="shear">
+          <div class="misc-card-tag">空间变换复合次序</div>
+          <h3 class="misc-card-name">乘法交换律泛化误解</h3>
+          <p class="misc-formula-preview">误认为：$A \cdot B = B \cdot A$</p>
+          <div class="misc-explain">
+            矩阵乘法本质为空间连续映射。先剪切后旋转，与先旋转后剪切，空间终态完全不同。大部分非对角矩阵相乘均不满足对易性。
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">李括号对易子：$[A, B] = AB - BA \neq O$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[1,2,0,1]" data-action="NON_COMMUTATIVE">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="shear">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 行列式非线性分配律 -->
+        <div class="misconception-card" data-category="det" data-matrix="cubist">
+          <div class="misc-card-tag">行列式仿射测度</div>
+          <h3 class="misc-card-name">行列式加法线性性假想</h3>
+          <p class="misc-formula-preview">误认为：$\det(A + B) = \det(A) + \det(B)$</p>
+          <div class="misc-explain">
+            行列式表征有向面积缩放倍率，关于矩阵各列具有多重线性性，但关于矩阵加法绝不具备整体线性性。如单位矩阵与相反阵相加行列式为 0，而非 2。
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">几何反例：$\det(I + (-I)) = 0 \neq 1 + 1$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[1,0,0,1]" data-action="DET_ADDITION_NONLINEAR">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="cubist">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 4: 纯旋转变换实特征值误解 -->
+        <div class="misconception-card" data-category="kernel" data-matrix="shear">
+          <div class="misc-card-tag">特征系统与不变流形</div>
+          <h3 class="misc-card-name">所有实矩阵均有实特征值误解</h3>
+          <p class="misc-formula-preview">误认为：任何矩阵均存在方向不变的实特征向量</p>
+          <div class="misc-explain">
+            对于平面 90° 旋转矩阵，平面上所有非零向量都在旋转，无任何方向保持不变的主轴。特征值落在复数域 $\pm i$，实空间无实特征线。
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">旋转矩阵：$R_{\pi/2} = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}, \lambda = \pm i$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[0,-1,1,0]" data-action="AB_ZERO">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="shear">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 5: 逆矩阵乘积分配顺序误解 -->
+        <div class="misconception-card" data-category="inverse" data-matrix="cubist">
+          <div class="misc-card-tag">逆与矩阵代数</div>
+          <h3 class="misc-card-name">求逆运算直接分配误解</h3>
+          <p class="misc-formula-preview">误认为：$(A \cdot B)^{-1} = A^{-1} \cdot B^{-1}$</p>
+          <div class="misc-explain">
+            类似“穿袜子再穿鞋子”，逆操作必须“先脱鞋再脱袜子”。逆变换复合必须颠倒顺序：$(AB)^{-1} = B^{-1} A^{-1}$。
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">恒等式检验：$(AB)(B^{-1}A^{-1}) = A(B B^{-1})A^{-1} = I$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[2,1,1,1]" data-action="INVERSE_ORDER">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="cubist">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 6: 乘积的秩守恒误解 -->
+        <div class="misconception-card" data-category="kernel" data-matrix="singular">
+          <div class="misc-card-tag">空间核与降维</div>
+          <h3 class="misc-card-name">矩阵乘法保持秩不变误解</h3>
+          <p class="misc-formula-preview">误认为：$\operatorname{rank}(A \cdot B) = \operatorname{rank}(A)$</p>
+          <div class="misc-explain">
+            矩阵乘法复合只能进一步压缩空间流形维数，不可能扩张维数。乘积的秩必然受限于两因子的最小秩。
+          </div>
+          <div class="misc-card-footer">
+            <span class="misc-math-proof">西尔维斯特不等式：$\operatorname{rank}(AB) \le \min(\operatorname{rank} A, \operatorname{rank} B)$</span>
+            <div class="misc-card-actions">
+              <button class="btn-load-workbench" data-mat="[1,2,2,4]" data-action="RANK_INEQUALITY">载入推演台计算</button>
+              <button class="btn-load-preset" data-preset="singular">调入画板验证 →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       4. 概念认知图谱与探究路径 (Knowledge Graph & Cognitive Path)
+       ============================================================ -->
+  <section id="graph-page" class="page-view hidden academic-subpage">
+    <div class="subpage-container">
+      <div class="subpage-header-row">
+        <div>
+          <h2 class="subpage-title">线性代数探究式认知图谱</h2>
+          <p class="subpage-subtitle">选择概念，查看前置关系与作答证据。七个实验覆盖四章；练习和迁移通过后才记录进度。</p>
+        </div>
+        <div class="subpage-badge" id="graph-mastery-badge">正在读取本机作答记录</div>
+      </div>
+
+      <!-- 动态 SVG DAG 矢量认知图谱挂载宿主容器 -->
+      <div id="knowledge-graph-container" class="knowledge-graph-container">
+        <!-- 由 KnowledgeGraphDAG 引擎动态渲染矢量连线、节点与交互抽屉 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- API Key 与推理模型设置模态框 (高质感毛玻璃 · 对标 ZCode Provider 设置) -->
+  <div id="api-settings-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">⚙️</span>
+          <h3>Agent 推理引擎与多模型配置</h3>
+        </div>
+        <button id="btn-close-modal" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-current-mode-indicator" class="agent-mode-banner cloud" style="margin-bottom: 14px;">
+          <span>● 当前模式：MiniMax M3 深度交错推理引擎就绪</span>
+        </div>
+
+        <div class="modal-field">
+          <label>服务提供方 / 预设</label>
+          <select id="cfg-provider" class="modal-select">
+            <option value="minimax" selected>MiniMax 官方/中转 API (M3 深度交错推理 · 内置旗舰)</option>
+            <option value="deepseek_official">DeepSeek 官方/兼容 API (用户自备 Key · 端侧直连)</option>
+            <option value="openai_official">OpenAI 官方/兼容 API (用户自备 Key · 端侧直连)</option>
+            <option value="custom">自定义 OpenAI-Compatible / 第三方聚合端点</option>
+          </select>
+        </div>
+
+        <div class="modal-field" id="cfg-preset-model-wrap">
+          <label>选择推理/多模态模型</label>
+          <select id="cfg-model-select" class="modal-select">
+            <!-- B-R1-2: 模型选项由 ModelCatalog.renderModelSelectOptionsHtml() 在启动时生成（js/app.js），此处不再手写模型清单 -->
+            <optgroup label="自定义">
+              <option value="custom_input">✎ 手动输入其他模型名称...</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="modal-field" id="cfg-custom-model-wrap" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label style="margin: 0;">自定义模型标识 (Model ID)</label>
+            <span id="cfg-custom-model-hint" style="font-size: 11px; color: #0284c7; cursor: pointer;">常见预设填充 ▾</span>
+          </div>
+          <input type="text" id="cfg-model" class="modal-input" placeholder="填写服务商实际 Model ID，例如 deepseek-chat 或自定义模型">
+          <div id="cfg-model-quick-chips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+            <span class="cfg-quick-chip" data-model="deepseek-flash" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.25); cursor: pointer;">deepseek-flash</span>
+            <span class="cfg-quick-chip" data-model="deepseek-chat" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.25); cursor: pointer;">deepseek-chat</span>
+            <span class="cfg-quick-chip" data-model="qwen2.5-coder:32b" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.25); cursor: pointer;">qwen2.5-coder:32b</span>
+            <span class="cfg-quick-chip" data-model="llama3:8b" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.1); color: #0284c7; border: 1px solid rgba(56, 189, 248, 0.25); cursor: pointer;">llama3:8b</span>
+          </div>
+        </div>
+
+        <div class="modal-field" id="cfg-tools-wrap" hidden>
+          <label for="cfg-tools-mode">工具调用</label>
+          <select id="cfg-tools-mode" class="modal-select">
+            <option value="auto">按模型目录判断</option>
+            <option value="enabled">启用 · 此端点支持工具调用</option>
+            <option value="disabled">关闭 · 仅文字对话</option>
+          </select>
+          <span class="field-hint">测试会请求一次无副作用的工具调用。未知模型通过测试后可启用；不会根据文本回复判定工具可用。</span>
+          <button type="button" id="btn-refresh-models" class="modal-btn-secondary" style="width:fit-content;margin-top:8px;border:1px solid #d5e2ee;border-radius:6px;padding:6px 12px;background:#f8fafc;color:#47667d;cursor:pointer;">读取账户模型</button>
+        </div>
+
+        <!-- 凭证说明由设置控制器根据当前配置投影。 -->
+        <div id="cfg-managed-key-banner" class="managed-credentials-card" style="display:none">
+          <div class="managed-badge">
+            <span class="managed-shield-icon">🛡️</span>
+            <div class="managed-text-col">
+              <div class="managed-title">凭证由用户配置</div>
+              <div class="managed-desc">本工程不内置共享凭证，连接状态以实际测试结果为准。</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 外部私有凭证输入区域 (仅当选择 DeepSeek 官方 / OpenAI / 自定义端点时平滑展开) -->
+        <div id="cfg-custom-credentials-wrap" style="display: none;">
+          <div class="modal-field">
+            <label>个人专属 API Key (密钥凭证)</label>
+            <input type="password" id="cfg-apikey" class="modal-input" placeholder="输入个人 API Key (如 sk-...)，Ollama 本地可留空">
+            <span class="field-hint">密钥仅保存在本地浏览器 localStorage 中，绝不上报服务器或打入明文日志</span>
+          </div>
+
+          <div class="modal-field">
+            <label>API Base URL</label>
+            <input type="text" id="cfg-baseurl" class="modal-input" placeholder="https://api.deepseek.com" value="https://api.deepseek.com">
+          </div>
+        </div>
+
+        <!-- 按照当前 Provider 动态联动的说明卡片 -->
+        <div id="cfg-provider-disclaimer-callout" class="model-disclaimer-callout">
+          <div id="cfg-disclaimer-title" class="disclaimer-title">✦ MiniMax 深度交错推理旗舰说明</div>
+          <p id="cfg-disclaimer-text" class="disclaimer-text">
+            MiniMax M3 为本系统唯一内置推荐旗舰推理大模型，原生支持深度交错思考链与长程工具调度。所有外部/第三方服务商模型均为用户自备 API Key 直连端点，凭证仅存储于本机 localStorage，本平台零凭证收集。
+          </p>
+        </div>
+        <div id="test-connection-result" class="test-connection-banner hidden"></div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <button type="button" id="btn-test-connection" class="modal-btn-secondary" style="border: 1px solid #0284c7; color: #0284c7; background: #f0f9ff; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer;">测试连接与工具</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-clear-apikey" class="modal-btn-secondary" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 12px; border-radius: 8px; font-weight: 600; cursor: pointer;">清除已保存密钥</button>
+          <button id="btn-save-cfg" class="modal-btn-primary">保存配置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DeepSeek 级网页实时代码运行沙箱抽屉/视窗 (Live Code Preview) -->
+  <div id="live-runner-modal" class="live-runner-backdrop hidden">
+    <div class="live-runner-container">
+      <div class="live-runner-header">
+        <div class="live-runner-title-group">
+          <span class="runner-icon">▶</span>
+          <span class="runner-title">网页代码实时运行沙箱 · Live Preview</span>
+          <span class="runner-tag" id="live-runner-lang-badge">HTML / SVG</span>
+        </div>
+        <div class="live-runner-actions">
+          <button type="button" id="btn-live-runner-refresh" class="runner-action-btn" title="重新运行代码">⟳ 刷新运行</button>
+          <button type="button" id="btn-close-live-runner" class="runner-action-btn close" title="关闭沙箱视窗 (Esc)">✕</button>
+        </div>
+      </div>
+      <div class="live-runner-body">
+        <iframe id="live-runner-frame" class="live-runner-iframe" sandbox="allow-scripts allow-modals" title="代码沙箱实时运行视窗"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- 权威开源库本地化运行载入 (Three.js 三维空间 / JSXGraph 约束几何 / Nerdamer 符号计算 / Marked Markdown 解析) -->
+  <script src="libs/three/three.min.js"></script>
+  <script src="libs/jsxgraph/jsxgraphcore.js"></script>
+  <script src="libs/marked/marked.min.js"></script>
+  <script src="js/observability/StructuredLogger.js"></script>
+  <script src="js/markdown/MarkdownRenderer.js"></script>
+
+  <!-- 核心计算、UI受控组件与可视化脚本引入 (分层解耦) -->
+  <script src="js/landing3d.js"></script>
+  <script src="js/artifacts/GeometryArtifactRenderer.js"></script>
+  <script src="js/workspace2d.js"></script>
+  <script src="js/math/RationalCore.js"></script>
+  <script src="js/math/ExactKernel.js"></script>
+  <script src="js/canvas/CanvasOracle.js"></script>
+  <script src="js/linearAlgebraEngine.js"></script>
+  <script src="js/katexRenderer.js"></script>
+  <script src="js/diagnostics/IssueLog.js"></script>
+  <script src="js/models/ModelCatalog.js"></script>
+  <script src="js/models/ModelTransport.js"></script>
+  <script src="js/models/UnifiedModelClient.js"></script>
+  <script src="js/mcp/QuotaPolicy.js"></script>
+  <!-- P7-H7 收紧：解释型 schema 校验器（零代码生成；Ajv 仅为 Node 侧差分 oracle，见 tests/unit/test_schema_validator_differential.js） -->
+  <script src="js/mcp/JsonSchemaLite.js"></script>
+  <script src="js/mcp/ToolRegistry.js"></script>
+  <script src="js/mcp/InBrowserMCPServer.js"></script>
+  <script src="js/mcp/PostMessageProviderBridge.js"></script>
+  <script src="js/skills/BaseSkill.js"></script>
+  <script src="js/skills/NullSpaceProbeSkill.js"></script>
+  <script src="js/observationCanvasSync.js"></script>
+<script src="js/pechdtStateStore.js"></script>
+<script src="js/skills/CounterexampleSkill.js"></script>
+  <script src="js/skills/CanvasTweenDriverSkill.js"></script>
+  <script src="js/skills/PechdtScaffoldSkill.js"></script>
+  <script src="js/skills/LinearSystemSolverSkill.js"></script>
+  <script src="js/skills/KnowledgeNavigatorSkill.js"></script>
+  <script src="js/skills/CodeSandboxSkill.js"></script>
+  <script src="js/skills/MultimodalOcrSkill.js"></script>
+  <script src="js/skills/TranslationSkill.js"></script>
+  <script src="js/skills/ImageGenerationSkill.js"></script>
+  <script src="js/skills/CanvasGraphicsDriverSkill.js"></script>
+  <script src="js/skills/LocalWorkspace.js"></script>
+  <script src="js/skills/HostFileClient.js"></script>
+  <script src="js/skills/WorkspaceFileSkill.js"></script>
+  <script src="components/LocalWorkspacePanel.js"></script>
+  <script src="js/artifacts/MathExperiment.js"></script>
+  <script src="js/artifacts/MathScene3D.js"></script>
+  <script src="js/artifacts/MathScene.js"></script>
+  <script src="js/artifacts/MathSceneCatalog.js"></script>
+  <script src="js/artifacts/SceneSnapshot.js"></script>
+  <script src="js/artifacts/SceneQuestion.js"></script>
+  <script src="js/artifacts/NativeMathDocument.js"></script>
+  <script src="js/libs/math-renderer.asset.js"></script>
+  <script src="js/skills/MathExperimentSkill.js"></script>
+  <script src="js/skills/ManimRenderClient.js"></script>
+  <script src="js/skills/WorkspaceInspectSkill.js"></script>
+  <script src="js/skills/InteractiveArtifactSkill.js"></script>
+  <script src="js/skills/ManimLessonSkill.js"></script>
+  <script src="js/storage/SessionHistoryManager.js"></script>
+  <script src="js/storage/TrajectoryRecorder.js"></script>
+  <script src="js/storage/PayloadMigrations.js"></script>
+  <script src="js/storage/StoragePort.js"></script>
+  <script src="js/teaching/PredictionCollector.js"></script>
+  <script src="js/teaching/ToolNeighborGuard.js"></script>
+  <script src="js/cognition/MisconceptionLibrary.js"></script>
+  <script src="js/cognition/MisconceptionTracker.js"></script>
+  <script src="js/artifacts/SolidGeometry.js"></script>
+  <script src="js/artifacts/ArtifactStore.js"></script>
+  <script src="js/artifacts/SandboxedArtifactRuntime.js"></script>
+  <script src="js/security/MarkdownSanitizer.js"></script>
+  <script src="js/fsm/StudioInteractionFSM.js"></script>
+  <script src="components/CanvasStateManager.js"></script>
+  <script src="components/TimeTravelScrubber.js"></script>
+  <script src="components/ReasoningBlock.js"></script>
+  <script src="components/ToolCallStreamTree.js"></script>
+  <script src="components/ToolCenter.js"></script>
+  <script src="js/prompts/PromptStore.js"></script>
+  <script src="components/PromptPalette.js"></script>
+  <script src="components/PromptInputDock.js"></script>
+  <script src="components/HypothesisScaffoldCard.js"></script>
+  <script src="components/CanvasAnnotationLayer.js"></script>
+  <script src="components/PromptTurnNavigator.js"></script>
+  <script src="js/manim/ManimLessonDeck.js"></script>
+  <script src="components/ArtifactStageDeck.js"></script>
+  <script src="js/artifacts/LinearMapDemo.js"></script>
+  <script src="js/telemetry/AgentTracer.js"></script>
+  <script src="js/telemetry/MetricsAggregator.js"></script>
+  <script src="js/telemetry/SpatialTelemetryBus.js"></script>
+  <script src="components/AmbientScaffoldBubble.js"></script>
+  <script src="js/compaction/ConversationCompactor.js"></script>
+  <script src="js/plugins/SkillManifest.js"></script>
+  <script src="js/agentEngine.js"></script>
+  <script src="js/teaching/CourseLibrary.js"></script>
+  <script src="js/teaching/CourseProgress.js"></script>
+  <script src="components/CoursePanel.js"></script>
+  <script src="js/cognition/CognitiveTracker.js"></script>
+  <script src="js/knowledgeGraph.js"></script>
+  <script src="js/scenarios/InquiryScenarioRegistry.js"></script>
+  <script src="js/scenarios/VariantTaskBank.js"></script>
+  <script src="js/teaching/TeachingTimeline.js"></script>
+  <script src="js/teaching/ReviewPacket.js"></script>
+  <script src="js/teaching/TerminationPolicy.js"></script>
+  <script src="js/teaching/TeachingProtocol.config.js"></script>
+  <script src="js/teaching/InquiryFlowController.js"></script>
+  <script src="js/storage/DemoPackExporter.js"></script>
+  <script src="js/storage/ReviewPackIO.js"></script>
+  <script src="js/canvas/CanvasPort.js"></script>
+  <script src="js/canvas/JSXGraphAdapter.js"></script>
+  <script src="js/canvas/CanvasBackendRouter.js"></script>
+  <script src="js/canvas/ThreeSpaceAdapter.js"></script>
+  <script src="js/ui/SettingsController.js"></script>
+  <script src="js/ui/SessionWorkspaceController.js"></script>
+  <script src="js/ui/SessionController.js"></script>
+  <script src="js/ui/RouteController.js"></script>
+  <script src="js/ui/ArtifactProjectionController.js"></script>
+  <script src="js/ui/MarkdownRenderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
+

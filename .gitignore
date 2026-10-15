@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.tempmediaStorage/
+.user_uploaded/
+
+# Build and runtime outputs
+dist/
+output/
+tmp/
+data/
+
+# Environment and sensitive keys (P7-H5: 凭据零入库)
+.env
+.env.*
+server/config.yaml
+deploy/remote_safe_deploy.py
+deploy/push_to_server.ps1
+
+# LaTeX sources and build intermediates (正式交付物为 docs/report/main.pdf)
+docs/report/chapters/
+docs/report/*.aux
+docs/report/*.log
+docs/report/*.toc
+docs/report/*.out
+docs/report/*.sty
+docs/report/main.tex
+
+# Internal audits and development plans
+docs/audits/
+docs/plans/
+
+# Tests and scratch scripts (本地开发保留，开源仓库不引入)
+tests/
+server/tests/
+scratch/
+scripts/
+
+# Media artifacts and caches
+media/Tex/
+media/texts/
+media_archive/
+voices/
+*.tar.gz
+*.docx
+*.log
+__pycache__/
+*.pyc
